@@ -38,9 +38,14 @@ var Board = function () {
   this.tileTypes = 8;
   this.tileSize = 32;
 
-
   this.tilePool = game.add.group();
   this.tilePool.position.setTo(game.width / 2, game.height / 2);
+
+  this.inputStartPoisition = {
+    x: 0,
+    y: 0
+  };
+  this.inputAllowed = true;
 
   this.createBoard();
   this.createSprites();
@@ -102,6 +107,11 @@ Board.prototype = {
       y = (Math.floor(i / this.FIELD_SIZE) * this.tileSize) + offsetY;
       item = this.tilePool.create(x, y, "game_sprites");
       item.frame = tile - 1;
+      /*
+      item.inputEnabled = true;
+      item.input.enableDrag(false, true);
+      item.input.enableSnap(32, 32, false, true);
+      */
     }
   }
 
@@ -185,8 +195,6 @@ module.exports = {
 };
 
 },{"../classes/Board":2,"../game":3}],7:[function(require,module,exports){
-/*globals module, require, localStorage*/
-
 var Phaser = (window.Phaser),
   game = require('../game'),
   localisation = require('../locale');
@@ -207,7 +215,7 @@ module.exports = {
     tween = this.add.tween(this.labelTitle)
       .to({ alpha: 1 }, 500, Phaser.Easing.Linear.None, true);
 
-    tween.onComplete.add(this.addPointerEvents, this);
+    tween.onComplete.add(this.startGame, this);
   },
 
   addPointerEvents: function () {
