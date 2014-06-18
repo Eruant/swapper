@@ -9,9 +9,14 @@ var Board = function () {
   this.tileTypes = 8;
   this.tileSize = 32;
 
-
   this.tilePool = game.add.group();
   this.tilePool.position.setTo(game.width / 2, game.height / 2);
+
+  this.inputStartPoisition = {
+    x: 0,
+    y: 0
+  };
+  this.inputAllowed = true;
 
   this.createBoard();
   this.createSprites();
@@ -73,6 +78,11 @@ Board.prototype = {
       y = (Math.floor(i / this.FIELD_SIZE) * this.tileSize) + offsetY;
       item = this.tilePool.create(x, y, "game_sprites");
       item.frame = tile - 1;
+      /*
+      item.inputEnabled = true;
+      item.input.enableDrag(false, true);
+      item.input.enableSnap(32, 32, false, true);
+      */
     }
   }
 

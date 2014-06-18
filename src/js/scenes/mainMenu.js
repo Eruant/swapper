@@ -1,5 +1,3 @@
-/*globals module, require, localStorage*/
-
 var Phaser = require('phaser'),
   game = require('../game'),
   localisation = require('../locale');
@@ -20,7 +18,7 @@ module.exports = {
     tween = this.add.tween(this.labelTitle)
       .to({ alpha: 1 }, 500, Phaser.Easing.Linear.None, true);
 
-    tween.onComplete.add(this.addPointerEvents, this);
+    tween.onComplete.add(this.startGame, this);
   },
 
   addPointerEvents: function () {
