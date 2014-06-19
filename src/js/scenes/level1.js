@@ -1,7 +1,4 @@
-/* globals module, require, localStorage*/
-
-var Phaser = require('phaser'),
-  game = require('../game'),
+var game = require('../game'),
   Board = require('../classes/Board');
 
 module.exports = {
@@ -12,6 +9,7 @@ module.exports = {
   },
 
   update: function () {
+    this.board.update();
   },
 
   restartGame: function () {
