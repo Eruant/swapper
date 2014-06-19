@@ -142,6 +142,13 @@ Board.prototype = {
     return Phaser.Math.floor(y / this.tileSize);
   },
 
+  getItemPositionFromKey: function (key) {
+    return {
+      x: (this.columnNumber(key) * this.tileSize) + this.offsetX,
+      y: (this.rowNumber(key) * this.tileSize) + this.offsetY
+    };
+  },
+
   getTileOffset: function (x, y) {
     if (Math.abs(x) < Math.abs(y)) {
       if (y > this.tileSize) {
@@ -160,6 +167,20 @@ Board.prototype = {
     return null;
   },
 
+  getTileSpriteFromKey: function (key) {
+
+    return 'test';
+  },
+
+  calculateTile: function (oldKey, transformMatrix) {
+    var row = this.rowNumber(oldKey),
+      column = this.columnNumber(oldKey),
+      newXPos = column + transformMatrix[0],
+      newYPos = row + transformMatrix[1];
+
+    return newXPos + (newYPos * this.FIELD_SIZE);
+  },
+
   isTilePositionValid: function (oldKey, transformMatrix) {
     var row = this.rowNumber(oldKey),
       column = this.columnNumber(oldKey),
@@ -169,12 +190,22 @@ Board.prototype = {
     return (newXPos >= 0 && newXPos < this.FIELD_SIZE) && (newYPos >= 0 && newYPos < this.FIELD_SIZE);
   },
 
+  swapTiles: function (key0, key1) {
+    console.log(this.getTileSpriteFromKey(key1));
+    this.moveTile(this.selectedItem.item, key1);
+    //console.log(key0, key1);
+  },
+
+  moveTile: function (sprite, key) {
+    game.add.tween(sprite).to(this.getItemPositionFromKey(key), 300, Phaser.Easing.Bounce.Out, true);
+  },
+
   checkForMatches: function () {
   },
 
   update: function () {
 
-    var currentCursorOffset, tempTile;
+    var currentCursorOffset, transformMatrix;
 
     //if (game.input.mousePointer.justReleased()) {
       //if (this.selectedItem.item !== null) {
@@ -188,8 +219,10 @@ Board.prototype = {
         y: game.input.mousePointer.y - this.selectedItem.start.y
       };
 
-      tempTile = this.getTileOffset(currentCursorOffset.x, currentCursorOffset.y);
-      if (tempTile !== null && this.isTilePositionValid(this.selectedItem.key, tempTile)) {
+      transformMatrix = this.getTileOffset(currentCursorOffset.x, currentCursorOffset.y);
+      if (transformMatrix !== null && this.isTilePositionValid(this.selectedItem.key, transformMatrix)) {
+        this.swapTiles(this.selectedItem.key, this.calculateTile(this.selectedItem.key, transformMatrix));
+        this.selectedItem.item = null;
         // swap the tile
       }
 
