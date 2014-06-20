@@ -40,6 +40,7 @@ var Board = function () {
       y: 0
     }
   };
+  this.tempSwap = null;
 
   this.FIELD_SIZE = 8;
   this.TILE_ARRAY_SIZE = this.FIELD_SIZE * this.FIELD_SIZE;
@@ -169,7 +170,17 @@ Board.prototype = {
 
   getTileSpriteFromKey: function (key) {
 
-    return 'test';
+    var positionOnBoard = this.getItemPositionFromKey(key);
+
+    var sprite = null;
+    this.tilePool.forEach(function (item) {
+      if (item.position.x === positionOnBoard.x && item.position.y === positionOnBoard.y) {
+        sprite = item;
+        // TODO figure out why Phaser does not support break or continue
+      }
+    });
+
+    return sprite;
   },
 
   calculateTile: function (oldKey, transformMatrix) {
@@ -191,27 +202,105 @@ Board.prototype = {
   },
 
   swapTiles: function (key0, key1) {
-    console.log(this.getTileSpriteFromKey(key1));
-    this.moveTile(this.selectedItem.item, key1);
-    //console.log(key0, key1);
+    var tween;
+    
+    this.moveTile(this.getTileSpriteFromKey(key0), key1);
+    tween = this.moveTile(this.getTileSpriteFromKey(key1), key0);
+
+    this.swapArrayKeys(key0, key1);
+
+    tween.onComplete.add(this.swapTilesComplete, this);
+  },
+
+  swapArrayKeys: function (key0, key1) {
+    var temp = this.tileArray[key0];
+
+    this.tileArray[key0] = this.tileArray[key1];
+    this.tileArray[key1] = temp;
+  },
+
+  swapTilesComplete: function () {
+    
+    if (this.selectedItem.item !== null && this.tempSwap !== null) {
+      if (this.checkForMatches()) {
+        // found a match
+      } else {
+        this.swapTiles(this.tempSwap.src, this.tempSwap.dest);
+      }
+      this.selectedItem.item = null;
+      this.tempSwap = null;
+    }
   },
 
   moveTile: function (sprite, key) {
-    game.add.tween(sprite).to(this.getItemPositionFromKey(key), 300, Phaser.Easing.Bounce.Out, true);
+    var tween = game.add.tween(sprite).to(this.getItemPositionFromKey(key), 300, Phaser.Easing.Bounce.Out, true);
+    return tween;
   },
 
   checkForMatches: function () {
+
+    var i, il, match, matches;
+
+    il = this.TILE_ARRAY_SIZE;
+    matches = [];
+
+    for (i = 0; i < il; i += 1) {
+      if (this.tileArray[i] !== null) {
+        match = this.isHorizontalMatch(i);
+        if (match) {
+          this.addMatchIfNotInArray(i - 2, matches);
+          this.addMatchIfNotInArray(i - 1, matches);
+          this.addMatchIfNotInArray(i, matches);
+        }
+        match = this.isVerticleMatch(i);
+        if (match) {
+          this.addMatchIfNotInArray(i - this.FIELD_SIZE, matches);
+          this.addMatchIfNotInArray(i - (this.FIELD_SIZE * 2), matches);
+          this.addMatchIfNotInArray(i, matches);
+        }
+      }
+    }
+
+    this.removeMatches(matches);
+
+    return (matches.length === 0) ? false : true;
+  },
+
+  addMatchIfNotInArray: function (key, array) {
+
+    var i = array.length;
+    while (i--) {
+      if (array[i] === key && array[i] !== null) {
+        return;
+      }
+    }
+
+    array.push(key);
+  },
+
+  removeMatches: function (matchedArray) {
+    var i, il, sprite, key;
+
+    il = matchedArray.length;
+    if (il > 0) {
+      for (i = 0; i < il; i += 1) {
+        key = matchedArray[i];
+        sprite = this.getTileSpriteFromKey(key);
+        sprite.kill();
+        this.tileArray[key] = null;
+      }
+
+      this.refillGrid();
+    }
+  },
+
+  refillGrid: function () {
+    // refill the grid
   },
 
   update: function () {
 
     var currentCursorOffset, transformMatrix;
-
-    //if (game.input.mousePointer.justReleased()) {
-      //if (this.selectedItem.item !== null) {
-        //this.checkForMatches();
-      //}
-    //}
 
     if (this.selectedItem.item !== null) {
       currentCursorOffset = {
@@ -220,10 +309,12 @@ Board.prototype = {
       };
 
       transformMatrix = this.getTileOffset(currentCursorOffset.x, currentCursorOffset.y);
-      if (transformMatrix !== null && this.isTilePositionValid(this.selectedItem.key, transformMatrix)) {
-        this.swapTiles(this.selectedItem.key, this.calculateTile(this.selectedItem.key, transformMatrix));
-        this.selectedItem.item = null;
-        // swap the tile
+      if (transformMatrix !== null && this.isTilePositionValid(this.selectedItem.key, transformMatrix) && this.tempSwap === null) {
+        this.tempSwap = {
+          src: this.selectedItem.key,
+          dest: this.calculateTile(this.selectedItem.key, transformMatrix)
+        };
+        this.swapTiles(this.tempSwap.src, this.tempSwap.dest);
       }
 
     }
