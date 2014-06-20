@@ -13,11 +13,11 @@ var Board = function () {
   };
   this.tempSwap = null;
 
-  this.FIELD_SIZE = 8;
+  this.FIELD_SIZE = 12;
   this.TILE_ARRAY_SIZE = this.FIELD_SIZE * this.FIELD_SIZE;
 
   this.tileArray = new Array(this.TILE_ARRAY_SIZE);
-  this.tileTypes = 8;
+  this.tileTypes = 4;
   this.tileSize = 32;
 
   this.offsetX = -((this.FIELD_SIZE / 2) * this.tileSize);
