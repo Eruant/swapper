@@ -13,11 +13,11 @@ var Board = function () {
   };
   this.tempSwap = null;
 
-  this.FIELD_SIZE = 4;
+  this.FIELD_SIZE = 15;
   this.TILE_ARRAY_SIZE = this.FIELD_SIZE * this.FIELD_SIZE;
 
   this.tileArray = new Array(this.TILE_ARRAY_SIZE);
-  this.tileTypes = 5;
+  this.tileTypes = 8;
   this.tileSize = 32;
   this.refillStyle = 'holes';
 
