@@ -13,11 +13,11 @@ var Board = function () {
   };
   this.tempSwap = null;
 
-  this.FIELD_SIZE = 15;
+  this.FIELD_SIZE = 10;
   this.TILE_ARRAY_SIZE = this.FIELD_SIZE * this.FIELD_SIZE;
 
   this.tileArray = new Array(this.TILE_ARRAY_SIZE);
-  this.tileTypes = 8;
+  this.tileTypes = 4;
   this.tileSize = 32;
   this.refillStyle = 'holes';
 
@@ -193,7 +193,7 @@ Board.prototype = {
   },
 
   swapTilesComplete: function () {
-    
+
     if (this.selectedItem.item !== null && this.tempSwap !== null) {
       if (this.checkForMatches()) {
         // found a match
@@ -203,6 +203,7 @@ Board.prototype = {
       this.selectedItem.item = null;
       this.tempSwap = null;
     }
+
   },
 
   moveTile: function (sprite, key) {
@@ -262,26 +263,32 @@ Board.prototype = {
         sprite.kill();
         this.tileArray[key] = null;
       }
-
       this.refillGrid();
     }
+
   },
 
   refillGrid: function () {
     // refill the grid
     
-    // options [holes, drop]
+    // options [holes, dropFill]
 
     switch (this.refillStyle) {
       case 'holes':
         this.fillHoles();
+        break;
+      case 'drop':
+        this.drop();
+        break;
+      case 'dropFill':
+        this.dropFill();
         break;
     }
   },
 
   fillHoles: function () {
 
-    var i, il, tile, x, y, sprite;
+    var i, il, tile, x, y, sprite, tween;
 
     il = this.TILE_ARRAY_SIZE;
 
@@ -305,13 +312,71 @@ Board.prototype = {
           sprite.revive();
           sprite.frame = this.tileArray[i] - 1;
           sprite.scale.setTo(0, 0);
-          game.add.tween(sprite.scale).to({ x: 1, y: 1 }, 300, Phaser.Easing.Linear.None, true);
+          tween = game.add.tween(sprite.scale);
+          tween.to({ x: 1, y: 1 }, 300, Phaser.Easing.Linear.None, true);
+          tween.onComplete.add(this.checkForMatches, this);
 
         }
       }
 
     }
 
+  },
+
+  drop: function () {
+    
+    // TODO find out what is causing this fill method to be buggy
+
+    var i, il, destTile, dx, dy, sx, sy, srcTile, sprite, tween, key, deadSprite;
+
+    il = this.TILE_ARRAY_SIZE - 1;
+
+    for (i = il; i >= 0; i -= 1) {
+      destTile = this.tileArray[i];
+
+      if (destTile === null) {
+
+        dx = (i % this.FIELD_SIZE * this.tileSize) + this.offsetX;
+        dy = (Math.floor(i / this.FIELD_SIZE) * this.tileSize) + this.offsetY;
+
+        key = i;
+        srcTile = 'undefined';
+        do {
+          key -= this.FIELD_SIZE;
+          srcTile = this.tileArray[key];
+        } while (key >= 0 && (srcTile === 'undefined' || srcTile === null));
+
+        if (key >= 0 && srcTile !== 'undefined') {
+
+          sx = (key % this.FIELD_SIZE * this.tileSize) + this.offsetX;
+          sy = (Math.floor(key / this.FIELD_SIZE) * this.tileSize) + this.offsetY;
+
+          deadSprite = this.getTileSpriteFromKey(i);
+          sprite = this.getTileSpriteFromKey(key);
+          this.tileArray[i] = this.tileArray[key];
+          this.tileArray[key] = null;
+
+          deadSprite.position.setTo(sx, sy);
+          
+          tween = game.add.tween(sprite);
+          tween.to({
+            x: dx,
+            y: dy
+          }, 300, Phaser.Easing.Bounce.Out, true);
+
+        }
+      }
+    }
+
+    if (tween) {
+      tween.onComplete.add(this.drop, this);
+    } else {
+      this.checkForMatches();
+    }
+
+  },
+
+  dropFill: function () {
   },
 
   update: function () {
