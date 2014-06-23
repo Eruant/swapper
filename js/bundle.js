@@ -42,12 +42,13 @@ var Board = function () {
   };
   this.tempSwap = null;
 
-  this.FIELD_SIZE = 12;
+  this.FIELD_SIZE = 4;
   this.TILE_ARRAY_SIZE = this.FIELD_SIZE * this.FIELD_SIZE;
 
   this.tileArray = new Array(this.TILE_ARRAY_SIZE);
-  this.tileTypes = 4;
+  this.tileTypes = 5;
   this.tileSize = 32;
+  this.refillStyle = 'holes';
 
   this.offsetX = -((this.FIELD_SIZE / 2) * this.tileSize);
   this.offsetY = -((this.FIELD_SIZE / 2) * this.tileSize);
@@ -111,6 +112,7 @@ Board.prototype = {
       x = (i % this.FIELD_SIZE * this.tileSize) + this.offsetX;
       y = (Math.floor(i / this.FIELD_SIZE) * this.tileSize) + this.offsetY;
       item = this.tilePool.create(x, y, "game_sprites");
+      item.anchor.setTo(0.5, 0.5);
       item.frame = tile - 1;
       item.inputEnabled = true;
       item.events.onInputDown.add(this.selectItem, this);
@@ -296,6 +298,49 @@ Board.prototype = {
 
   refillGrid: function () {
     // refill the grid
+    
+    // options [holes, drop]
+
+    switch (this.refillStyle) {
+      case 'holes':
+        this.fillHoles();
+        break;
+    }
+  },
+
+  fillHoles: function () {
+
+    var i, il, tile, x, y, sprite;
+
+    il = this.TILE_ARRAY_SIZE;
+
+    for (i = 0; i < il; i += 1) {
+      tile = this.tileArray[i];
+
+      if (tile === null) {
+
+        sprite = this.tilePool.getFirstExists(false); // get the first dead sprite without creating new sprites
+
+        if (sprite) {
+
+          do {
+            tile = Math.ceil(Math.random() * this.tileTypes);
+            this.tileArray[i] = tile;
+          } while (this.isHorizontalMatch(i) || this.isVerticleMatch(i));
+
+          x = (i % this.FIELD_SIZE * this.tileSize) + this.offsetX;
+          y = (Math.floor(i / this.FIELD_SIZE) * this.tileSize) + this.offsetY;
+          sprite.position.setTo(x, y);
+          sprite.revive();
+          sprite.frame = this.tileArray[i] - 1;
+          sprite.scale.setTo(0, 0);
+          game.add.tween(sprite.scale).to({ x: 1, y: 1 }, 300, Phaser.Easing.Linear.None, true);
+
+        }
+      }
+
+    }
+
   },
 
   update: function () {
