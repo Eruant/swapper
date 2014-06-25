@@ -12,7 +12,10 @@ module.exports = {
     this.loadingBar.anchor.y = 0.5;
     this.load.setPreloadSprite(this.loadingBar);
 
-    game.load.spritesheet('game_sprites', 'assets/game_sprites.png', 32, 32);
+    game.load.spritesheet('tile_1', 'assets/tile_1.png', 32, 32);
+    game.load.spritesheet('tile_2', 'assets/tile_2.png', 32, 32);
+    game.load.spritesheet('tile_3', 'assets/tile_3.png', 32, 32);
+    game.load.spritesheet('tile_4', 'assets/tile_4.png', 32, 32);
 
   },
 

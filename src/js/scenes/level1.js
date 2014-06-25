@@ -1,15 +1,14 @@
 var game = require('../game'),
-  Board = require('../classes/Board');
+  Grid = require('../classes/grid');
 
 module.exports = {
 
   create: function () {
 
-    this.board = new Board();
+    this.grid = new Grid();
   },
 
   update: function () {
-    this.board.update();
   },
 
   restartGame: function () {

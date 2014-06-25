@@ -26,423 +26,126 @@ game.state.add('level1', level1, false);
 
 game.state.start('boot');
 
-},{"./game":3,"./locale":4,"./scenes/boot.js":5,"./scenes/level1":6,"./scenes/mainMenu":7,"./scenes/preloader":8}],2:[function(require,module,exports){
-var Phaser = (window.Phaser),
-  game = require('../game');
+},{"./game":4,"./locale":5,"./scenes/boot.js":6,"./scenes/level1":7,"./scenes/mainMenu":8,"./scenes/preloader":9}],2:[function(require,module,exports){
+var game = require('../game'),
+  Tile = require('./tile');
 
-var Board = function () {
+var Grid = function () {
 
-  this.allowInput = true;
-  this.selectedItem = {
-    item: null,
-    start: {
-      x: 0,
-      y: 0
-    }
-  };
-  this.tempSwap = null;
+  this.TILE_WIDTH = 32;
+  this.TILE_HEIGHT = 32;
+  this.GRID_WIDTH = 20;
+  this.GRID_HEIGHT = 15;
+  this.GRID_ARRAY_SIZE = this.GRID_WIDTH * this.GRID_HEIGHT;
 
-  this.FIELD_SIZE = 10;
-  this.TILE_ARRAY_SIZE = this.FIELD_SIZE * this.FIELD_SIZE;
-
-  this.tileArray = new Array(this.TILE_ARRAY_SIZE);
   this.tileTypes = 4;
-  this.tileSize = 32;
-  this.refillStyle = 'holes';
-
-  this.offsetX = -((this.FIELD_SIZE / 2) * this.tileSize);
-  this.offsetY = -((this.FIELD_SIZE / 2) * this.tileSize);
-
   this.tilePool = game.add.group();
-  this.tilePool.position.setTo(game.width / 2, game.height / 2);
 
-  this.createBoard();
-  this.createSprites();
+  this.tilePool.x = (game.width * 0.5) - (this.TILE_WIDTH * this.GRID_WIDTH * 0.5);
+  this.tilePool.y = (game.height * 0.5) - (this.TILE_HEIGHT * this.GRID_HEIGHT * 0.5);
 
+  this.gridArray = new Array(this.GRID_ARRAY_SIZE);
+  this.createArray();
 };
 
-Board.prototype = {
-
-  rowNumber: function (i) {
-    if (i === 0 || this.FIELD_SIZE === 0) {
-      return 0;
-    }
-
-    return Math.floor(i / this.FIELD_SIZE);
-  },
-
-  columnNumber: function (i) {
-    return i % this.FIELD_SIZE;
-  },
-
-  isHorizontalMatch: function (i) {
-    return this.columnNumber(i) >= 2 &&
-      this.tileArray[i] === this.tileArray[i - 1] &&
-      this.tileArray[i] === this.tileArray[i - 2] &&
-      this.rowNumber(i) === this.rowNumber(i - 2);
-  },
-
-  isVerticleMatch: function (i) {
-    return this.rowNumber(i) >= 2 &&
-      this.tileArray[i] === this.tileArray[i - this.FIELD_SIZE] &&
-      this.tileArray[i] === this.tileArray[i - (this.FIELD_SIZE * 2)];
-  },
-
-  createBoard: function () {
-
-    var i, il;
-
-    il = this.TILE_ARRAY_SIZE;
-    
-    for (i = 0; i < il; i += 1) {
-      do {
-        this.tileArray[i] = Math.ceil(Math.random() * this.tileTypes);
-      } while (this.isHorizontalMatch(i) || this.isVerticleMatch(i));
-    }
-
-  },
-
-  createSprites: function () {
-
-    var i, il, tile, item, x, y;
-
-    il = this.TILE_ARRAY_SIZE;
-    for (i = 0; i < il; i += 1) {
-      tile = this.tileArray[i];
-      x = (i % this.FIELD_SIZE * this.tileSize) + this.offsetX;
-      y = (Math.floor(i / this.FIELD_SIZE) * this.tileSize) + this.offsetY;
-      item = this.tilePool.create(x, y, "game_sprites");
-      item.anchor.setTo(0.5, 0.5);
-      item.frame = tile - 1;
-      item.inputEnabled = true;
-      item.events.onInputDown.add(this.selectItem, this);
-    }
-  },
-
-  selectItem: function (item) {
-
-    if (this.allowInput) {
-      this.selectedItem.item = item;
-      this.selectedItem.key = this.getItemArrayKeyFromPosition(item.position.x - this.offsetX, item.position.y - this.offsetY);
-      this.selectedItem.start.x = game.input.mousePointer.x;
-      this.selectedItem.start.y = game.input.mousePointer.y;
-    }
-  },
-
-  getItemArrayKeyFromPosition: function (x, y) {
-
-    var row = this.getItemRowFromPosition(x),
-      column = this.getItemColumnFromPosition(y);
-
-    return (column * this.FIELD_SIZE) + row;
-  },
-
-  getItemRowFromPosition: function (x) {
-    return Phaser.Math.floor(x / this.tileSize);
-  },
-
-  getItemColumnFromPosition: function (y) {
-    return Phaser.Math.floor(y / this.tileSize);
-  },
-
-  getItemPositionFromKey: function (key) {
-    return {
-      x: (this.columnNumber(key) * this.tileSize) + this.offsetX,
-      y: (this.rowNumber(key) * this.tileSize) + this.offsetY
-    };
-  },
-
-  getTileOffset: function (x, y) {
-    if (Math.abs(x) < Math.abs(y)) {
-      if (y > this.tileSize) {
-        return [0, 1];
-      } else if (y < -this.tileSize) {
-        return [0, -1];
-      }
-    } else {
-      if (x > this.tileSize) {
-        return [1, 0];
-      } else if (x < -this.tileSize) {
-        return [-1, 0];
-      }
-    }
-
-    return null;
-  },
-
-  getTileSpriteFromKey: function (key) {
-
-    var positionOnBoard = this.getItemPositionFromKey(key);
-
-    var sprite = null;
-    this.tilePool.forEach(function (item) {
-      if (item.position.x === positionOnBoard.x && item.position.y === positionOnBoard.y) {
-        sprite = item;
-        // TODO figure out why Phaser does not support break or continue
-      }
-    });
-
-    return sprite;
-  },
-
-  calculateTile: function (oldKey, transformMatrix) {
-    var row = this.rowNumber(oldKey),
-      column = this.columnNumber(oldKey),
-      newXPos = column + transformMatrix[0],
-      newYPos = row + transformMatrix[1];
-
-    return newXPos + (newYPos * this.FIELD_SIZE);
-  },
-
-  isTilePositionValid: function (oldKey, transformMatrix) {
-    var row = this.rowNumber(oldKey),
-      column = this.columnNumber(oldKey),
-      newXPos = column + transformMatrix[0],
-      newYPos = row + transformMatrix[1];
-
-    return (newXPos >= 0 && newXPos < this.FIELD_SIZE) && (newYPos >= 0 && newYPos < this.FIELD_SIZE);
-  },
-
-  swapTiles: function (key0, key1) {
-    var tween;
-    
-    this.moveTile(this.getTileSpriteFromKey(key0), key1);
-    tween = this.moveTile(this.getTileSpriteFromKey(key1), key0);
-
-    this.swapArrayKeys(key0, key1);
-
-    tween.onComplete.add(this.swapTilesComplete, this);
-  },
-
-  swapArrayKeys: function (key0, key1) {
-    var temp = this.tileArray[key0];
-
-    this.tileArray[key0] = this.tileArray[key1];
-    this.tileArray[key1] = temp;
-  },
-
-  swapTilesComplete: function () {
-
-    if (this.selectedItem.item !== null && this.tempSwap !== null) {
-      if (this.checkForMatches()) {
-        // found a match
-      } else {
-        this.swapTiles(this.tempSwap.src, this.tempSwap.dest);
-      }
-      this.selectedItem.item = null;
-      this.tempSwap = null;
-    }
-
-  },
-
-  moveTile: function (sprite, key) {
-    var tween = game.add.tween(sprite).to(this.getItemPositionFromKey(key), 300, Phaser.Easing.Bounce.Out, true);
-    return tween;
-  },
-
-  checkForMatches: function () {
-
-    var i, il, match, matches;
-
-    il = this.TILE_ARRAY_SIZE;
-    matches = [];
-
-    for (i = 0; i < il; i += 1) {
-      if (this.tileArray[i] !== null) {
-        match = this.isHorizontalMatch(i);
-        if (match) {
-          this.addMatchIfNotInArray(i - 2, matches);
-          this.addMatchIfNotInArray(i - 1, matches);
-          this.addMatchIfNotInArray(i, matches);
-        }
-        match = this.isVerticleMatch(i);
-        if (match) {
-          this.addMatchIfNotInArray(i - this.FIELD_SIZE, matches);
-          this.addMatchIfNotInArray(i - (this.FIELD_SIZE * 2), matches);
-          this.addMatchIfNotInArray(i, matches);
-        }
-      }
-    }
-
-    this.removeMatches(matches);
-
-    return (matches.length === 0) ? false : true;
-  },
-
-  addMatchIfNotInArray: function (key, array) {
-
-    var i = array.length;
-    while (i--) {
-      if (array[i] === key && array[i] !== null) {
-        return;
-      }
-    }
-
-    array.push(key);
-  },
-
-  removeMatches: function (matchedArray) {
-    var i, il, sprite, key;
-
-    il = matchedArray.length;
-    if (il > 0) {
-      for (i = 0; i < il; i += 1) {
-        key = matchedArray[i];
-        sprite = this.getTileSpriteFromKey(key);
-        sprite.kill();
-        this.tileArray[key] = null;
-      }
-      this.refillGrid();
-    }
-
-  },
-
-  refillGrid: function () {
-    // refill the grid
-    
-    // options [holes, dropFill]
-
-    switch (this.refillStyle) {
-      case 'holes':
-        this.fillHoles();
-        break;
-      case 'drop':
-        this.drop();
-        break;
-      case 'dropFill':
-        this.dropFill();
-        break;
-    }
-  },
-
-  fillHoles: function () {
-
-    var i, il, tile, x, y, sprite, tween;
-
-    il = this.TILE_ARRAY_SIZE;
-
-    for (i = 0; i < il; i += 1) {
-      tile = this.tileArray[i];
-
-      if (tile === null) {
-
-        sprite = this.tilePool.getFirstExists(false); // get the first dead sprite without creating new sprites
-
-        if (sprite) {
-
-          do {
-            tile = Math.ceil(Math.random() * this.tileTypes);
-            this.tileArray[i] = tile;
-          } while (this.isHorizontalMatch(i) || this.isVerticleMatch(i));
-
-          x = (i % this.FIELD_SIZE * this.tileSize) + this.offsetX;
-          y = (Math.floor(i / this.FIELD_SIZE) * this.tileSize) + this.offsetY;
-          sprite.position.setTo(x, y);
-          sprite.revive();
-          sprite.frame = this.tileArray[i] - 1;
-          sprite.scale.setTo(0, 0);
-          tween = game.add.tween(sprite.scale);
-          tween.to({ x: 1, y: 1 }, 300, Phaser.Easing.Linear.None, true);
-          tween.onComplete.add(this.checkForMatches, this);
-
-        }
-      }
-
-    }
-
-  },
-
-  drop: function () {
-    
-    // TODO find out what is causing this fill method to be buggy
-
-    var i, il, destTile, dx, dy, sx, sy, srcTile, sprite, tween, key, deadSprite;
-
-    il = this.TILE_ARRAY_SIZE - 1;
-
-    for (i = il; i >= 0; i -= 1) {
-      destTile = this.tileArray[i];
-
-      if (destTile === null) {
-
-        dx = (i % this.FIELD_SIZE * this.tileSize) + this.offsetX;
-        dy = (Math.floor(i / this.FIELD_SIZE) * this.tileSize) + this.offsetY;
-
-        key = i;
-        srcTile = 'undefined';
-        do {
-          key -= this.FIELD_SIZE;
-          srcTile = this.tileArray[key];
-        } while (key >= 0 && (srcTile === 'undefined' || srcTile === null));
-
-        if (key >= 0 && srcTile !== 'undefined') {
-
-          sx = (key % this.FIELD_SIZE * this.tileSize) + this.offsetX;
-          sy = (Math.floor(key / this.FIELD_SIZE) * this.tileSize) + this.offsetY;
-
-          deadSprite = this.getTileSpriteFromKey(i);
-          sprite = this.getTileSpriteFromKey(key);
-          this.tileArray[i] = this.tileArray[key];
-          this.tileArray[key] = null;
-
-          deadSprite.position.setTo(sx, sy);
-          
-          tween = game.add.tween(sprite);
-          tween.to({
-            x: dx,
-            y: dy
-          }, 300, Phaser.Easing.Bounce.Out, true);
-
-        }
-      }
-    }
-
-    if (tween) {
-      tween.onComplete.add(this.drop, this);
-    } else {
-      this.checkForMatches();
-    }
-
-  },
-
-  dropFill: function () {
-  },
-
-  update: function () {
-
-    var currentCursorOffset, transformMatrix;
-
-    if (this.selectedItem.item !== null) {
-      currentCursorOffset = {
-        x: game.input.mousePointer.x - this.selectedItem.start.x,
-        y: game.input.mousePointer.y - this.selectedItem.start.y
-      };
-
-      transformMatrix = this.getTileOffset(currentCursorOffset.x, currentCursorOffset.y);
-      if (transformMatrix !== null && this.isTilePositionValid(this.selectedItem.key, transformMatrix) && this.tempSwap === null) {
-        this.tempSwap = {
-          src: this.selectedItem.key,
-          dest: this.calculateTile(this.selectedItem.key, transformMatrix)
-        };
-        this.swapTiles(this.tempSwap.src, this.tempSwap.dest);
-      }
-
-    }
-
+Grid.prototype.createArray = function () {
+
+  var i, il, key, tile, x, y;
+
+  il = this.GRID_ARRAY_SIZE;
+  for (i = 0; i < il; i++) {
+    do {
+      key = Math.ceil(Math.random() * this.tileTypes);
+      x = (i % this.GRID_WIDTH * this.TILE_WIDTH);
+      y = (Math.floor(i / this.GRID_WIDTH) * this.TILE_HEIGHT);
+      tile = new Tile(x, y, 'tile_' + key, key, this.selectTile);
+      this.gridArray[i] = tile;
+      this.tilePool.add(tile);
+    } while (this.isHorizontalMatch(i) || this.isVerticleMatch(i));
   }
 
 };
 
-module.exports = Board;
+Grid.prototype.getRowNumber = function (key) {
+  if (key === 0 || this.GRID_WIDTH === 0) {
+    return 0;
+  }
 
-},{"../game":3}],3:[function(require,module,exports){
+  return Math.floor(key / this.GRID_WIDTH);
+};
+
+Grid.prototype.getColumnNumber = function (key) {
+  return key % this.GRID_WIDTH;
+};
+
+Grid.prototype.isHorizontalMatch = function (key) {
+
+  if (!this.gridArray[key]) {
+    return false;
+  }
+
+  return this.getColumnNumber(key) >= 2 &&
+    this.gridArray[key].type === this.gridArray[key - 1].type &&
+    this.gridArray[key].type === this.gridArray[key - 2].type &&
+    this.getRowNumber(key) === this.getRowNumber(key - 2);
+};
+
+Grid.prototype.isVerticleMatch = function (key) {
+
+  if (!this.gridArray[key]) {
+    return false;
+  }
+
+  return this.getRowNumber(key) >= 2 &&
+    this.gridArray[key].type === this.gridArray[key - this.GRID_WIDTH].type &&
+    this.gridArray[key].type === this.gridArray[key - (2 * this.GRID_WIDTH)].type;
+};
+
+Grid.prototype.selectTile = function () {
+  console.log('tile selected');
+};
+
+module.exports = Grid;
+
+},{"../game":4,"./tile":3}],3:[function(require,module,exports){
+var Phaser = (window.Phaser),
+  game = require('../game');
+
+var Tile = function (x, y, texture, type, inputCallBack) {
+  Phaser.Sprite.call(this, game, x, y, texture);
+  this.anchor.setTo(0.5, 0.5);
+  this.type = type;
+  this.inputEnabled = true;
+  this.events.onInputDown.add(inputCallBack, this);
+
+  // add animations
+  var animation = this.animations.add('glint');
+  animation.onComplete.add(this.animationComplete, this);
+  this.animationComplete(); // force the animation to restart
+};
+
+Tile.prototype = Object.create(Phaser.Sprite.prototype);
+Tile.prototype.constructor = Tile;
+
+Tile.prototype.startAnimationGlint = function () {
+  this.animations.play('glint', 5, false);
+};
+
+Tile.prototype.animationComplete = function () {
+  this.frame = 0;
+  game.time.events.add(Phaser.Timer.SECOND * Math.random() * 1000, this.startAnimationGlint, this);
+};
+
+module.exports = Tile;
+
+},{"../game":4}],4:[function(require,module,exports){
 var Phaser = (window.Phaser);
 
 var game = new Phaser.Game(800, 600, Phaser.AUTO, 'content', null);
 
 module.exports = game;
 
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 /**
  * @class locale
  */
@@ -456,7 +159,7 @@ module.exports = {
   }
 };
 
-},{}],5:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 /*globals module*/
 
 var game = require('../game');
@@ -487,19 +190,18 @@ module.exports = {
 
 };
 
-},{"../game":3}],6:[function(require,module,exports){
+},{"../game":4}],7:[function(require,module,exports){
 var game = require('../game'),
-  Board = require('../classes/Board');
+  Grid = require('../classes/grid');
 
 module.exports = {
 
   create: function () {
 
-    this.board = new Board();
+    this.grid = new Grid();
   },
 
   update: function () {
-    this.board.update();
   },
 
   restartGame: function () {
@@ -508,7 +210,7 @@ module.exports = {
 
 };
 
-},{"../classes/Board":2,"../game":3}],7:[function(require,module,exports){
+},{"../classes/grid":2,"../game":4}],8:[function(require,module,exports){
 var Phaser = (window.Phaser),
   game = require('../game'),
   localisation = require('../locale');
@@ -542,7 +244,7 @@ module.exports = {
 
 };
 
-},{"../game":3,"../locale":4}],8:[function(require,module,exports){
+},{"../game":4,"../locale":5}],9:[function(require,module,exports){
 /*globals module, require*/
 
 var Phaser = (window.Phaser),
@@ -557,7 +259,10 @@ module.exports = {
     this.loadingBar.anchor.y = 0.5;
     this.load.setPreloadSprite(this.loadingBar);
 
-    game.load.spritesheet('game_sprites', 'assets/game_sprites.png', 32, 32);
+    game.load.spritesheet('tile_1', 'assets/tile_1.png', 32, 32);
+    game.load.spritesheet('tile_2', 'assets/tile_2.png', 32, 32);
+    game.load.spritesheet('tile_3', 'assets/tile_3.png', 32, 32);
+    game.load.spritesheet('tile_4', 'assets/tile_4.png', 32, 32);
 
   },
 
@@ -576,4 +281,4 @@ module.exports = {
 
 };
 
-},{"../game":3}]},{},[1])
+},{"../game":4}]},{},[1])
