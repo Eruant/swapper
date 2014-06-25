@@ -17,6 +17,12 @@ var Tile = function (x, y, texture, type, inputCallBack, delegate) {
 Tile.prototype = Object.create(Phaser.Sprite.prototype);
 Tile.prototype.constructor = Tile;
 
+Tile.prototype.moveTo = function (x, y) {
+  var tween = game.add.tween(this);
+  tween.to({ x: x, y: y }, 300, Phaser.Easing.Bounce.Out, true);
+  return tween;
+};
+
 Tile.prototype.startAnimationGlint = function () {
   this.animations.play('glint', 5, false);
 };

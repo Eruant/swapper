@@ -1,4 +1,5 @@
-var game = require('../game'),
+var Phaser = require('phaser'),
+  game = require('../game'),
   Tile = require('./tile');
 
 var Grid = function () {
@@ -19,6 +20,7 @@ var Grid = function () {
   this.createArray();
 
   this.tileSelected = null;
+  this.tempSwap = null;
   this.allowInput = true;
 };
 
@@ -80,6 +82,7 @@ Grid.prototype.selectTile = function (tile) {
   if (this.allowInput) {
     this.tileSelected = {
       tile: tile,
+      key: this.getGridKeyFromPosition(tile.position.x, tile.position.y),
       start: {
         x: game.input.activePointer.x,
         y: game.input.activePointer.y
@@ -88,9 +91,103 @@ Grid.prototype.selectTile = function (tile) {
   }
 };
 
+Grid.prototype.getGridKeyFromPosition = function (x, y) {
+
+  var column = this.getColumnFromPosition(x),
+    row = this.getRowFromPosition(y);
+
+  return (row * this.GRID_WIDTH) + column;
+};
+
+Grid.prototype.getRowFromPosition = function (x) {
+  return Phaser.Math.floor(x / this.TILE_WIDTH);
+};
+
+Grid.prototype.getColumnFromPosition = function (y) {
+  return Phaser.Math.floor(y / this.TILE_HEIGHT);
+};
+
+Grid.prototype.calculateTileOffset = function (x, y) {
+
+  if (Math.abs(x) < Math.abs(y)) {
+    if (y > this.TILE_HEIGHT) {
+      return [0, 1];
+    } else if (y < -this.TILE_HEIGHT) {
+      return [0, -1];
+    }
+  } else {
+    if (x > this.TILE_WIDTH) {
+      return [1, 0];
+    } else if (x < -this.TILE_WIDTH) {
+      return [-1, 0];
+    }
+  }
+
+  return null;
+};
+
+Grid.prototype.isTilePositionValid = function (key, matrix) {
+
+  var column = this.getColumnNumber(key),
+    row = this.getRowNumber(key),
+    newXPos = column + matrix[0],
+    newYPos = row + matrix[1];
+
+  return (newXPos >= 0 && newXPos < this.GRID_WIDTH) && (newYPos >= 0 && newYPos < this.GRID_HEIGHT);
+};
+
+Grid.prototype.calculateTile = function (key, matrix) {
+
+  var column = this.getColumnNumber(key),
+    row = this.getRowNumber(key),
+    newXPos = column + matrix[0],
+    newYPos = row + matrix[1];
+
+  return newXPos + (newYPos * this.GRID_WIDTH);
+};
+
+Grid.prototype.swapTiles = function (key0, key1) {
+
+  var srcTile, destTile, sx, sy, dx, dy, tween;
+
+  srcTile = this.gridArray[key0];
+  destTile = this.gridArray[key1];
+  sx = srcTile.x;
+  sy = srcTile.y;
+  dx = destTile.x;
+  dy = destTile.y;
+
+  // animate tiles
+  srcTile.moveTo(dx, dy);
+  tween = destTile.moveTo(sx, sy);
+
+  // swap tiles
+  this.gridArray[key0] = destTile;
+  this.gridArray[key1] = srcTile;
+
+  tween.onComplete.add(this.swapTilesComplete, this);
+};
+
+Grid.prototype.swapTilesComplete = function () {
+  if (this.tileSelected !== null || this.tempSwap !== null) {
+    if (this.checkForMatches()) {
+      // found a match
+    } else {
+      this.swapTiles(this.tempSwap.src, this.tempSwap.dest);
+    }
+    this.tileSelected = null;
+    this.tempSwap = null;
+    this.allowInput = true;
+  }
+};
+
+Grid.prototype.checkForMatches = function () {
+  return false;
+};
+
 Grid.prototype.update = function () {
 
-  var currentCursorOffset;
+  var currentCursorOffset, transformMatrix;
 
   if (this.tileSelected !== null) {
     this.allowInput = false;
@@ -98,7 +195,17 @@ Grid.prototype.update = function () {
       x: game.input.activePointer.x - this.tileSelected.start.x,
       y: game.input.activePointer.y - this.tileSelected.start.y
     };
+
+    transformMatrix = this.calculateTileOffset(currentCursorOffset.x, currentCursorOffset.y);
+    if (transformMatrix !== null && this.isTilePositionValid(this.tileSelected.key, transformMatrix) && this.tempSwap === null) {
+      this.tempSwap = {
+        src: this.tileSelected.key,
+        dest: this.calculateTile(this.tileSelected.key, transformMatrix)
+      };
+      this.swapTiles(this.tempSwap.src, this.tempSwap.dest);
+    }
   }
+
 
 };
 
