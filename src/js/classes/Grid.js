@@ -63,7 +63,10 @@ Grid.prototype.isHorizontalMatch = function (key) {
   return this.getColumnNumber(key) >= 2 &&
     this.gridArray[key].type === this.gridArray[key - 1].type &&
     this.gridArray[key].type === this.gridArray[key - 2].type &&
-    this.getRowNumber(key) === this.getRowNumber(key - 2);
+    this.getRowNumber(key) === this.getRowNumber(key - 2) &&
+    this.gridArray[key].alive &&
+    this.gridArray[key - 1].alive &&
+    this.gridArray[key - 2].alive;
 };
 
 Grid.prototype.isVerticleMatch = function (key) {
@@ -74,7 +77,10 @@ Grid.prototype.isVerticleMatch = function (key) {
 
   return this.getRowNumber(key) >= 2 &&
     this.gridArray[key].type === this.gridArray[key - this.GRID_WIDTH].type &&
-    this.gridArray[key].type === this.gridArray[key - (2 * this.GRID_WIDTH)].type;
+    this.gridArray[key].type === this.gridArray[key - (2 * this.GRID_WIDTH)].type &&
+    this.gridArray[key].alive &&
+    this.gridArray[key - this.GRID_WIDTH].alive &&
+    this.gridArray[key - (2 * this.GRID_WIDTH)].alive;
 };
 
 Grid.prototype.selectTile = function (tile) {
@@ -182,7 +188,59 @@ Grid.prototype.swapTilesComplete = function () {
 };
 
 Grid.prototype.checkForMatches = function () {
-  return false;
+
+  var i, il, match, matches;
+
+  il = this.GRID_ARRAY_SIZE;
+  matches = [];
+
+  for (i = 0; i < il; i++) {
+    if (this.gridArray[i].alive) {
+      match = this.isHorizontalMatch(i);
+      if (match) {
+        this.addMatchIfNotInArray(i - 2, matches);
+        this.addMatchIfNotInArray(i - 1, matches);
+        this.addMatchIfNotInArray(i, matches);
+      }
+      match = this.isVerticleMatch(i);
+      if (match) {
+        this.addMatchIfNotInArray(i - this.GRID_WIDTH, matches);
+        this.addMatchIfNotInArray(i - (this.GRID_WIDTH * 2), matches);
+        this.addMatchIfNotInArray(i, matches);
+      }
+    }
+  }
+
+  this.removeMatches(matches);
+
+  return (matches.length === 0) ? false : true;
+};
+
+Grid.prototype.addMatchIfNotInArray = function (key, array) {
+
+  var i = array.length;
+  while (i--) {
+    if (array[i] === key && array[i] !== null) {
+      return;
+    }
+  }
+
+  array.push(key);
+};
+
+Grid.prototype.removeMatches = function (matchedArray) {
+
+  var i, il, key;
+
+  il = matchedArray.length;
+  if (il > 0) {
+    for (i = 0; i < il; i++) {
+      key = matchedArray[i];
+      console.log(this.gridArray[key].alive);
+      this.gridArray[key].kill();
+    }
+  }
+
 };
 
 Grid.prototype.update = function () {

@@ -7,6 +7,7 @@ var Tile = function (x, y, texture, type, inputCallBack, delegate) {
   this.type = type;
   this.inputEnabled = true;
   this.events.onInputDown.add(inputCallBack, delegate);
+  this.revive();
 
   // add animations
   var animation = this.animations.add('glint');
