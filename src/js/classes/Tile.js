@@ -1,12 +1,12 @@
 var Phaser = require('phaser'),
   game = require('../game');
 
-var Tile = function (x, y, texture, type, inputCallBack) {
+var Tile = function (x, y, texture, type, inputCallBack, delegate) {
   Phaser.Sprite.call(this, game, x, y, texture);
   this.anchor.setTo(0.5, 0.5);
   this.type = type;
   this.inputEnabled = true;
-  this.events.onInputDown.add(inputCallBack, this);
+  this.events.onInputDown.add(inputCallBack, delegate);
 
   // add animations
   var animation = this.animations.add('glint');

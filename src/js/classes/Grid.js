@@ -17,6 +17,9 @@ var Grid = function () {
 
   this.gridArray = new Array(this.GRID_ARRAY_SIZE);
   this.createArray();
+
+  this.tileSelected = null;
+  this.allowInput = true;
 };
 
 Grid.prototype.createArray = function () {
@@ -29,7 +32,7 @@ Grid.prototype.createArray = function () {
       key = Math.ceil(Math.random() * this.tileTypes);
       x = (i % this.GRID_WIDTH * this.TILE_WIDTH);
       y = (Math.floor(i / this.GRID_WIDTH) * this.TILE_HEIGHT);
-      tile = new Tile(x, y, 'tile_' + key, key, this.selectTile);
+      tile = new Tile(x, y, 'tile_' + key, key, this.selectTile, this);
       this.gridArray[i] = tile;
       this.tilePool.add(tile);
     } while (this.isHorizontalMatch(i) || this.isVerticleMatch(i));
@@ -72,8 +75,31 @@ Grid.prototype.isVerticleMatch = function (key) {
     this.gridArray[key].type === this.gridArray[key - (2 * this.GRID_WIDTH)].type;
 };
 
-Grid.prototype.selectTile = function () {
-  console.log('tile selected');
+Grid.prototype.selectTile = function (tile) {
+
+  if (this.allowInput) {
+    this.tileSelected = {
+      tile: tile,
+      start: {
+        x: game.input.activePointer.x,
+        y: game.input.activePointer.y
+      }
+    };
+  }
+};
+
+Grid.prototype.update = function () {
+
+  var currentCursorOffset;
+
+  if (this.tileSelected !== null) {
+    this.allowInput = false;
+    currentCursorOffset = {
+      x: game.input.activePointer.x - this.tileSelected.start.x,
+      y: game.input.activePointer.y - this.tileSelected.start.y
+    };
+  }
+
 };
 
 module.exports = Grid;

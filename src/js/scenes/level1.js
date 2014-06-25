@@ -9,6 +9,7 @@ module.exports = {
   },
 
   update: function () {
+    this.grid.update();
   },
 
   restartGame: function () {
